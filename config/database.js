@@ -1,22 +1,42 @@
 const parse = require("pg-connection-string").parse;
-const config = parse(process.env.DATABASE_URL);
 
-module.exports = ({ env }) => ({
-  defaultConnection: "default",
-  connections: {
-    default: {
-      connector: "bookshelf",
-      settings: {
-        client: "postgres",
-        host: env("host"),
-        port: env.int("port", 1337),
-        database: env("database"),
-        username: env("user"),
-        password: env("password"),
+module.exports = ({ env }) => {
+  if (env("NODE_ENV") === "production") {
+    const config = parse(process.env.DATABASE_URL);
+    return {
+      defaultConnection: "default",
+      connections: {
+        default: {
+          connector: "bookshelf",
+          settings: {
+            client: "postgres",
+            host: config.host,
+            port: config.port,
+            database: config.database,
+            username: config.user,
+            password: config.password,
+          },
+          options: {
+            ssl: false,
+          },
+        },
       },
-      options: {
-        ssl: false,
+    };
+  }
+
+  return {
+    defaultConnection: "default",
+    connections: {
+      default: {
+        connector: "bookshelf",
+        settings: {
+          client: "sqlite",
+          filename: env("DATABASE_FILENAME", ".tmp/data.db"),
+        },
+        options: {
+          useNullAsDefault: true,
+        },
       },
     },
-  },
-});
+  };
+};
